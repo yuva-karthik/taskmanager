@@ -1,25 +1,36 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #define n 50
 //preprocessor statements
 
 int count = 0;
+FILE * file;
+char * filename;
 
 typedef struct{ //structre for listing tasks
     char task[100];
     bool done;
-}tasks;
-tasks list[n];
+}TASK;
+TASK list[n];
 
 void menu();
 void task_add();
 void task_display();
+void marfile(int);
 void task_mark();
+void delfile();
 void task_delete();
 //function declarations
 
-int main(){
+int main(int argc , char *argv[]){
     int m_work;
+    if(argv[1] == NULL){
+        filename = "tasklist.txt";
+    }else{
+        filename = argv[1];
+    }
     do{
         menu();
         printf("your choice: ");
@@ -48,7 +59,8 @@ int main(){
     return 0;
 }
 
-void menu(){// for displaying available commands
+void menu(){
+    // for displaying available commands
     puts("-----------MENU-----------");
     puts("1 . add task");
     puts("2 . display task");
@@ -58,19 +70,28 @@ void menu(){// for displaying available commands
     puts("--------------------------\n");
 }
 
-void task_add(){//for m_work = 1
+void task_add(){
+    //for m_work = 1
     if(count < n){
+        file = fopen(filename,"a");
+        if(file == NULL){
+            perror("error opening the file");
+            exit(1);
+        }
         printf("enter task: ");
         scanf(" %[^\n]",list[count].task);
         list[count].done = false;
         count++;
+        fprintf(file,"%d. %s\n",count,list[count-1].task);
+        fclose(file);
         puts("task added");
     }else{
         puts("no tasks can be added");
     }
 }
 
-void task_display(){//for m_work = 2
+void task_display(){
+    //for m_work = 2
     puts("--------------------------\n");
     if(count > 0){
         puts("current tasks are:");
@@ -85,7 +106,32 @@ void task_display(){//for m_work = 2
     puts("--------------------------\n");
 }
 
-void task_mark(){//for m_work = 3
+void marfile(int t){
+    // marking completion in file funtion
+    FILE *file = fopen(filename,"r");
+    if(file == NULL){
+        perror("error opening the file");
+        exit(1);
+    }
+    char t_filename[] = "t_tasklist.txt";
+    FILE *t_file = fopen(t_filename,"w");
+    int sn = 1;
+    for(int i = 1;i<=count;i++){
+        if(list[i-1].done == true){
+            fprintf(t_file,"%d. %s [completed]\n",sn,list[i-1].task);
+        }else{
+            fprintf(t_file,"%d. %s\n",sn,list[i-1].task);
+        }
+            sn++;
+    }
+    fclose(file);
+    fclose(t_file);
+    remove(filename);
+    rename(t_filename,filename);
+}
+
+void task_mark(){
+    //for m_work = 3
     task_display();
     if(count > 0){
         int t;
@@ -93,25 +139,54 @@ void task_mark(){//for m_work = 3
         scanf("%d",&t);
         if(t >= 1 && t <= count){
             list[t-1].done = true;
+            marfile(t);
+            puts("task marked as completed");
         }else{
             puts("task number invalid");
         }
     }
 }
 
-void task_delete(){// for m_work = 4
+void delfile(){
+    // deletion in file funtion
+    file = fopen(filename,"r");
+    if(file == NULL){
+        perror("error opening the file");
+        exit(1);
+    }
+    char t_filename[] = "t_tasklist.txt";
+    FILE *t_file = fopen(t_filename,"w");
+    int sn = 1;
+    for(int i = 1;i<=count;i++){
+        if(list[i-1].done == true){
+            fprintf(t_file,"%d. %s [completed]\n",sn,list[i-1].task);
+        }else{
+            fprintf(t_file,"%d. %s\n",sn,list[i-1].task);
+        }
+            sn++;
+    }
+    fclose(file);
+    fclose(t_file);
+    remove(filename);
+    rename(t_filename,filename);
+}
+
+void task_delete(){
+    // for m_work = 4
     task_display();
     if(count > 0){
-        int t;
+        int t,pos;
         printf("enter task number to delete: ");
         scanf("%d",&t);
         if(t >= 1 && t <= count){
             for(int i = t-1 ; i < count - 1 ; i++){
                 list[i] = list[i+1];
             }
-        count--;
+            puts("task deleted");
+            count--;
+            delfile();
         }else{
-            puts("task number in valid");
+            puts("task number invalid");
         }
     }
 }
